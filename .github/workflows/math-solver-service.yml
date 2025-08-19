@@ -1,0 +1,43 @@
+name: CI for Math Solver Service
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'services/math-solver-service/**' # Chỉ trigger khi có thay đổi trong service này
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'services/math-solver-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./services/math-solver-service
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest httpx # Cài đặt pytest và httpx để test
+
+    # - name: Run tests (Bỏ comment khi bạn đã viết test )
+    #   run: pytest
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./services/math-solver-service
+        push: false # Chưa push lên registry, chỉ build để kiểm tra
+        tags: math-solver-service:ci-${{ github.sha }}

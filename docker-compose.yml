@@ -1,0 +1,92 @@
+
+
+services:
+  # User Service: Quản lý người dùng (giả lập)
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    volumes:
+      - ./services/user-service:/app
+    ports:
+      - "8001:8001"
+    networks:
+      - backend-network
+    labels:
+      # Traefik Labels for Service Discovery and Routing
+      - "traefik.enable=true" # Cho phép Traefik quản lý container này.
+      - "traefik.http.routers.user-service.rule=Host(`localhost`) && PathPrefix(`/api/users`)" # Định nghĩa quy tắc định tuyến. Ở đây, nếu host là localhost và đường dẫn bắt đầu bằng /api/users, traffic sẽ được chuyển đến router này.
+      - "traefik.http.routers.user-service.entrypoints=web"
+      - "traefik.http.services.user-service.loadbalancer.server.port=8001" # Chỉ cho Traefik biết service backend đang chạy ở port nào bên trong mạng Docker.
+
+  # Math Solver Service: Giải phương trình bậc 2
+  math-solver-service:
+    build: ./services/math-solver-service
+    container_name: math-solver-service
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8003 --reload
+    volumes:
+      - ./services/math-solver-service:/app
+    ports:
+      - "8003:8003"
+    networks:
+      - backend-network
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"  # Cho phép Traefik quản lý container này.
+      - "traefik.http.routers.math-solver-service.rule=Host(`localhost`) && PathPrefix(`/api/math`)" # Định nghĩa quy tắc định tuyến. Ở đây, nếu host là localhost và đường dẫn bắt đầu bằng /api/users, traffic sẽ được chuyển đến router này.
+      - "traefik.http.routers.math-solver-service.entrypoints=web"
+      - "traefik.http.services.math-solver-service.loadbalancer.server.port=8003" # Chỉ cho Traefik biết service backend đang chạy ở port nào bên trong mạng Docker.
+
+  # Traefik: API Gateway
+  traefik:
+    image: "traefik:v2.10"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--metrics.prometheus=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - backend-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-metrics.rule=Host(`localhost`) && PathPrefix(`/metrics`)"
+      - "traefik.http.routers.traefik-metrics.entrypoints=web"
+      - "traefik.http.services.traefik-metrics.loadbalancer.server.port=8080"
+
+  # Prometheus: Thu thập metrics <Prometheus sẽ định kỳ truy cập vào http://traefik:8080/metrics để lấy các số liệu (metrics ) về request, response, status code...>
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    networks:
+      - backend-network
+
+  # Grafana: Hiển thị dashboard
+  grafana:
+    image: grafana/grafana:9.5.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - backend-network
+    depends_on:
+      - prometheus
+
+networks:
+  backend-network:
+    driver: bridge
+
+

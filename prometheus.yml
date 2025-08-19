@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:8080'] # Traefik có sẵn endpoint /metrics
+
+  # Chúng ta cần thêm một exporter để lấy metrics từ FastAPI
+  # Ví dụ: https://github.com/trallnag/starlette-prometheus
+  # Trong phạm vi bài này, chúng ta sẽ chỉ giám sát Traefik
