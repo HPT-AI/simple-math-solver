@@ -15,19 +15,19 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3  #Sử dụng docker/login-action@v3 để đăng nhập vào Docker Hub.
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}        #Nó sử dụng DOCKER_USERNAME và DOCKER_TOKEN mà bạn đã cấu hình trong GitHub Secrets.
+          username: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}        #Nó sử dụng DOCKER_USERNAME và DOCKER_TOKEN mà bạn đã cấu hình trong GitHub Secrets.
 
       - name: Build and push user-service image
         uses: docker/build-push-action@v5              #Sử dụng docker/build-push-action@v5 để:   
         with:
           context: ./services/user-service              #Chỉ định thư mục chứa Dockerfile và mã nguồn của user-service.
           push: true                                    #Yêu cầu đẩy image lên Docker Hub sau khi build thành công.
-          tags: ${{ secrets.DOCKER_USERNAME }}/simple-math-solver-user-service:latest    #Định nghĩa tên và tag của image. Nó sẽ có dạng your_docker_username/simple-math-solver-user-service:latest.
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/simple-math-solver-user-service:latest    #Định nghĩa tên và tag của image. Nó sẽ có dạng your_docker_username/simple-math-solver-user-service:latest.
 
       - name: Build and push math-solver-service image
         uses: docker/build-push-action@v5
         with:
           context: ./services/math-solver-service
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/simple-math-solver-math-solver-service:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/simple-math-solver-math-solver-service:latest
